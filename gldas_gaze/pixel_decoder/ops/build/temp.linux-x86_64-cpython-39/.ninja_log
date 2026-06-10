@@ -1,0 +1,4 @@
+# ninja log v5
+0	3968	1781081618776121771	/home/zsy/project/gldas/gldas_gaze/pixel_decoder/ops/build/temp.linux-x86_64-cpython-39/home/zsy/project/gldas/gldas_gaze/pixel_decoder/ops/src/cpu/ms_deform_attn_cpu.o	b826107e6eeae007
+0	12449	1781081627255947040	/home/zsy/project/gldas/gldas_gaze/pixel_decoder/ops/build/temp.linux-x86_64-cpython-39/home/zsy/project/gldas/gldas_gaze/pixel_decoder/ops/src/cuda/ms_deform_attn_cuda.o	99d9f0e6c6b2fd2f
+0	13258	1781081628064930303	/home/zsy/project/gldas/gldas_gaze/pixel_decoder/ops/build/temp.linux-x86_64-cpython-39/home/zsy/project/gldas/gldas_gaze/pixel_decoder/ops/src/vision.o	c6c70d7222fbfaaf

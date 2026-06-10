@@ -1,0 +1,67 @@
+# GLDAS-Gaze dependencies (conda env `gldas-gaze`, Python 3.9)
+#
+# Install order:
+#   1) PyTorch (with CUDA): pip install torch==1.13.1 torchvision==0.14.1 --index-url https://download.pytorch.org/whl/cu117
+#   2) detectron2: pip install 'git+https://github.com/facebookresearch/detectron2.git'
+#   3) pip install -r requirements.txt
+#   4) Optional CUDA op: cd gldas_gaze/pixel_decoder/ops && sh make.sh
+
+# --- Core scientific & array ---
+numpy==1.23.5
+scipy==1.10.0
+pandas==1.5.2
+h5py==3.7.0
+
+# --- Vision & image ---
+opencv-python==4.7.0.68
+Pillow==9.3.0
+imageio==2.23.0
+scikit-image==0.19.3
+
+# --- Plotting & visualization ---
+matplotlib==3.6.2
+contourpy==1.0.6
+cycler==0.11.0
+fonttools==4.38.0
+kiwisolver==1.4.4
+pyparsing==3.0.9
+
+# --- Config & detectron2-related ---
+PyYAML==6.0
+yacs==0.1.8
+fvcore==0.1.5.post20221221
+iopath==0.1.9
+hydra-core==1.3.1
+omegaconf==2.3.0
+
+# --- Training & logging ---
+tqdm==4.64.1
+tensorboard==2.11.0
+tensorboard-data-server==0.6.1
+tensorboard-plugin-wit==1.8.1
+
+# --- COCO / panoptic (COCO-Search18, annotations) ---
+pycocotools==2.0.6
+# panopticapi: install from source if needed, e.g. git clone https://github.com/cocodataset/panopticapi && pip install -e .
+
+# --- Build & C++ extension (for pixel_decoder ops) ---
+Cython==0.29.32
+
+# --- Other common deps ---
+joblib==1.2.0
+scikit-learn==1.2.0
+requests==2.28.1
+filelock==3.9.0
+packaging==22.0
+typing_extensions==4.15.0
+portalocker==2.6.0
+tabulate==0.9.0
+termcolor==2.2.0
+cloudpickle==2.2.0
+networkx==2.8.8
+shapely==2.0.0
+protobuf==3.20.3
+
+# --- Optional: timm (if switching backbone later), fairscale (large model) ---
+# timm==0.6.12
+# fairscale==0.4.13
