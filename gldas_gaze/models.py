@@ -303,6 +303,7 @@ class GLDASGazeModel(nn.Module):
         self, pa, num_decoder_layers: int, hidden_dim: int, nhead: int, ntask: int,
         tgt_vocab_size: int, num_output_layers: int, separate_fix_arch: bool = False,
         train_encoder: bool = False, train_foveator: bool = True, train_pixel_decoder: bool = True,
+        train_ema: bool = True,
         use_dino: bool = True, pre_norm: bool = False, dropout: float = 0.0,
         dim_feedforward: int = 512, parallel_arch: bool = True, dorsal_source: List[str] = ["P1"],
         num_encoder_layers: int = 3, output_centermap: bool = False, output_saliency: bool = False,
@@ -325,14 +326,20 @@ class GLDASGazeModel(nn.Module):
         self.encoder = ImageFeatureEncoder(pa.backbone_config, dropout, pa.pixel_decoder)
         self.symbol_offset = len(self.pa.special_symbols)
         if not train_encoder:
-            self.encoder.eval()
-            for p in self.encoder.parameters():
+            self.encoder.backbone.eval()
+            for p in self.encoder.backbone.parameters():
                 p.requires_grad = False
         self.train_pixel_decoder = train_pixel_decoder
         if train_pixel_decoder:
             self.encoder.pixel_decoder.train()
             for p in self.encoder.pixel_decoder.parameters():
                 p.requires_grad = True
+        else:
+            self.encoder.pixel_decoder.eval()
+            for p in self.encoder.pixel_decoder.parameters():
+                p.requires_grad = False
+        self.train_ema = train_ema
+        self._set_ema_trainable(train_ema)
         featmap_channels = 256
         if hidden_dim != featmap_channels:
             self.input_proj = nn.Conv2d(featmap_channels, hidden_dim, kernel_size=1)
@@ -377,6 +384,29 @@ class GLDASGazeModel(nn.Module):
 
         if self.is_pretraining:
             self.pretrain_task_head = MLP(hidden_dim, 32, 1, 3)
+
+    def _ema_modules(self):
+        return [self.encoder.ema_256, self.encoder.ema_512,
+                self.encoder.ema_1024, self.encoder.ema_2048]
+
+    def _set_ema_trainable(self, trainable: bool):
+        for module in self._ema_modules():
+            module.train(trainable)
+            for p in module.parameters():
+                p.requires_grad = trainable
+
+    def train(self, mode: bool = True):
+        super().train(mode)
+        if mode:
+            # 训练时保持预训练 backbone 冻结，只训练显式打开的适配模块。
+            if not self.train_encoder:
+                self.encoder.backbone.eval()
+            if not self.train_pixel_decoder:
+                self.encoder.pixel_decoder.eval()
+            if not self.train_ema:
+                for module in self._ema_modules():
+                    module.eval()
+        return self
 
     def forward(self, img, tgt_seq, tgt_padding_mask, tgt_seq_high, task_ids=None, return_attn_weights=False, img_ids=None):
         img_embs_s4, img_embs_s1, img_embs_s2 = self.encoder(img)

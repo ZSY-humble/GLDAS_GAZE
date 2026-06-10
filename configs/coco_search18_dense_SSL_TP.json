@@ -28,6 +28,7 @@
 	"Train": {
 		"train_backbone": false,
 		"train_pixel_decoder": true,
+		"train_ema": true,
 		"use_dino_pretrained_model": false,
 		"dropout": 0,
 		"losses": ["next_fix_pred", "term_pred"],

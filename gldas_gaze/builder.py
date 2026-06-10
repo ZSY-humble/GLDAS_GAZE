@@ -123,6 +123,7 @@ def build(hparams, dataset_root, device, is_pretraining, is_eval=False, split=1)
             separate_fix_arch=hparams.Model.separate_fix_arch,
             train_encoder=hparams.Train.train_backbone,
             train_pixel_decoder=hparams.Train.train_pixel_decoder,
+            train_ema=hparams.Train.get('train_ema', True),
             use_dino=hparams.Train.use_dino_pretrained_model,
             dropout=hparams.Train.dropout, dim_feedforward=hidden_size,
             parallel_arch=hparams.Model.parallel_arch,
