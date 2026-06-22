@@ -156,6 +156,60 @@ python test_eval.py \
 
 - Use `--tap TP` or `--tap TA` to evaluate on Target-Present or Target-Absent, respectively.
 - `--eval-mode greedy` uses greedy decoding; use `sample` for sampling-based decoding.
+- Step-wise overlay images are disabled by default. Add `--save-overlays` only when visualization files are needed.
+
+### Cross-condition generalization
+
+Use `tools/cross_condition_eval.py` when the trained model condition and the
+evaluation condition are different. The model is built from `--model-hparams`,
+while the evaluation data protocol is built from `--eval-hparams`.
+
+```bash
+# TP -> TP
+python tools/cross_condition_eval.py \
+  --model-hparams configs/coco_search18_dense_SSL_TP.json \
+  --eval-hparams configs/coco_search18_dense_SSL_TP.json \
+  --dataset-root dataset \
+  --ckpt pretrained_models/TP.pt \
+  --tap TP \
+  --gpu-id 0 \
+  --disable-saliency
+
+# TP -> TA
+python tools/cross_condition_eval.py \
+  --model-hparams configs/coco_search18_dense_SSL_TP.json \
+  --eval-hparams configs/coco_search18_dense_SSL_TA.json \
+  --dataset-root dataset \
+  --ckpt pretrained_models/TP.pt \
+  --tap TA \
+  --gpu-id 0 \
+  --disable-saliency
+
+# TA -> TA
+python tools/cross_condition_eval.py \
+  --model-hparams configs/coco_search18_dense_SSL_TA.json \
+  --eval-hparams configs/coco_search18_dense_SSL_TA.json \
+  --dataset-root dataset \
+  --ckpt pretrained_models/TA.pt \
+  --tap TA \
+  --gpu-id 0 \
+  --disable-saliency
+
+# TA -> TP
+python tools/cross_condition_eval.py \
+  --model-hparams configs/coco_search18_dense_SSL_TA.json \
+  --eval-hparams configs/coco_search18_dense_SSL_TP.json \
+  --dataset-root dataset \
+  --ckpt pretrained_models/TA.pt \
+  --tap TP \
+  --gpu-id 0 \
+  --disable-saliency
+```
+
+When a TP-trained model is evaluated with a longer TA protocol, the script
+extends the fixation time embedding by repeating the last trained time-step
+embedding. Use `--max-eval-steps 6` if you want to cap cross-condition
+evaluation to the TP horizon.
 
 ---
 

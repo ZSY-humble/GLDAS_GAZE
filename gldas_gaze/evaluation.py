@@ -325,7 +325,8 @@ def compute_conditional_saliency_metrics(pa, model, gazeloader, task_dep_prior_m
 
     return info_gain.item(), nss.item(), auc.item()
 
-def sample_scanpaths(model, dataloader, pa, device, sample_action, center_initial=True):
+def sample_scanpaths(model, dataloader, pa, device, sample_action, center_initial=True,
+                     save_overlays=False, overlay_dir="scanpath_step_overlays"):
     """Return scanpaths and nonstop_actions."""
     all_actions = []
     nonstop_actions = []
@@ -343,24 +344,24 @@ def sample_scanpaths(model, dataloader, pa, device, sample_action, center_initia
                 img, task_ids, pa, sample_action, center_initial
             )
 
-            out_root = "scanpath_step_overlays"
-            os.makedirs(out_root, exist_ok=True)
-            for b in range(img.size(0)):
-                name = f"{_sanitize(cat_names_batch[b])}__{_sanitize(img_names_batch[b])}__{_sanitize(cond_batch[b])}"
-                out_dir = os.path.join(out_root, name)
-                os.makedirs(out_dir, exist_ok=True)
+            if save_overlays:
+                os.makedirs(overlay_dir, exist_ok=True)
+                for b in range(img.size(0)):
+                    name = f"{_sanitize(cat_names_batch[b])}__{_sanitize(img_names_batch[b])}__{_sanitize(cond_batch[b])}"
+                    out_dir = os.path.join(overlay_dir, name)
+                    os.makedirs(out_dir, exist_ok=True)
 
-                T = trajs[b].size(0)
-                step_points_norm = [(float(trajs[b][t,0].cpu()), float(trajs[b][t,1].cpu()))
-                                    for t in range(T)]
+                    T = trajs[b].size(0)
+                    step_points_norm = [(float(trajs[b][t,0].cpu()), float(trajs[b][t,1].cpu()))
+                                        for t in range(T)]
 
-                save_step_overlays(
-                    img_tensor=img[b],
-                    step_maps=per_sample_maps[b][:T],
-                    step_points_norm=step_points_norm,
-                    out_dir=out_dir,
-                    prefix="overlay"
-                )
+                    save_step_overlays(
+                        img_tensor=img[b],
+                        step_maps=per_sample_maps[b][:T],
+                        step_points_norm=step_points_norm,
+                        out_dir=out_dir,
+                        prefix="overlay"
+                    )
 
             nonstop_actions.extend([
                 (cat_names_batch[k], img_names_batch[k], cond_batch[k], nonstop_trajs[k])
@@ -383,7 +384,8 @@ def evaluate(model, device,
              task_dep_prior_maps, semSS_strings, dataset_root,
              human_scanpath_test,
              sample_action=False, sample_stop=False,
-             output_saliency_metrics=True, center_initial=True, log_dir=None):
+             output_saliency_metrics=True, center_initial=True, log_dir=None,
+             save_overlays=False, overlay_dir="scanpath_step_overlays"):
     print("Eval on {} batches of images and {} batches of fixations".format(
         len(valid_img_loader), len(gazeloader)))
 
@@ -396,7 +398,8 @@ def evaluate(model, device,
           f"and enforce IOR = {pa.enforce_IOR} with radius {pa.IOR_radius}...")
 
     scanpaths, nonstop_actions = sample_scanpaths(
-        model, valid_img_loader, pa, device, sample_action, center_initial)
+        model, valid_img_loader, pa, device, sample_action, center_initial,
+        save_overlays=save_overlays, overlay_dir=overlay_dir)
 
     nonstop_scanpaths = actions2scanpaths(nonstop_actions, pa.patch_num, pa.im_h, pa.im_w)
 
@@ -511,4 +514,3 @@ def generate_unique_filename(base_path):
     timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
     base_name, ext = os.path.splitext(base_path)
     return f"{base_name}_{timestamp}{ext}"
-

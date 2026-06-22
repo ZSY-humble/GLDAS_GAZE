@@ -23,6 +23,10 @@ def parse_args():
     parser.add_argument("--split", type=int, default=1)
     parser.add_argument("--tap", choices=["TP", "TA", "ALL"], default="ALL",
                         help="Which task(s) to evaluate: TP, TA, or ALL.")
+    parser.add_argument("--save-overlays", action="store_true",
+                        help="Save step-wise scanpath overlay visualizations.")
+    parser.add_argument("--overlay-dir", type=str, default="scanpath_step_overlays",
+                        help="Directory for overlay visualizations when --save-overlays is set.")
     return parser.parse_args()
 
 
@@ -34,7 +38,8 @@ def run_evaluation(model, device, tap_flag,
                    sss_strings, valid_gaze_loader_tp, valid_gaze_loader_ta,
                    sps_test_tp, sps_test_ta,
                    dataset_root, sample_action, output_saliency_metrics,
-                   center_initial, log_dir):
+                   center_initial, log_dir, save_overlays=False,
+                   overlay_dir="scanpath_step_overlays"):
     rst_tp = rst_ta = None
 
     if tap_flag in ["TP", "ALL"]:
@@ -47,7 +52,9 @@ def run_evaluation(model, device, tap_flag,
             sample_action=sample_action,
             output_saliency_metrics=output_saliency_metrics,
             center_initial=center_initial,
-            log_dir=log_dir
+            log_dir=log_dir,
+            save_overlays=save_overlays,
+            overlay_dir=overlay_dir
         )
         print("TP:", rst_tp)
 
@@ -61,7 +68,9 @@ def run_evaluation(model, device, tap_flag,
             sample_action=sample_action,
             output_saliency_metrics=output_saliency_metrics,
             center_initial=center_initial,
-            log_dir=log_dir
+            log_dir=log_dir,
+            save_overlays=save_overlays,
+            overlay_dir=overlay_dir
         )
         print("TA:", rst_ta)
 
@@ -112,7 +121,7 @@ def main():
         sss_strings, valid_gaze_loader_tp, valid_gaze_loader_ta,
         sps_test_tp, sps_test_ta,
         dataset_root, sample_action, output_saliency_metrics,
-        center_initial, log_dir,
+        center_initial, log_dir, args.save_overlays, args.overlay_dir,
     )
 
 
