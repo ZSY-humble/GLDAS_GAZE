@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="GLDAS-Gaze 单图在线推理与视觉搜索轨迹回放">
+  <meta name="color-scheme" content="light">
+  <title>GLDAS-Gaze · 在线推理</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="GLDAS-Gaze 首页">
+      <span class="brand-mark" aria-hidden="true">G<span>·</span></span>
+      <span>GLDAS<span class="brand-light">-Gaze</span></span>
+    </a>
+    <div class="header-right">
+      <span class="research-tag">视觉搜索实验室</span>
+      <span class="service-status" id="service-status" role="status">
+        <i aria-hidden="true"></i><span id="service-label">正在连接服务</span>
+      </span>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-intro">
+      <div>
+        <p class="eyebrow">TASK-DRIVEN SCANPATH PREDICTION</p>
+        <h1>看见模型的搜索过程<span>。</span></h1>
+        <p class="intro-copy">给定图像与搜索目标，预测注视轨迹，逐步探索注意力的流向。</p>
+      </div>
+      <span class="intro-index" aria-hidden="true">01 / 在线推理</span>
+    </div>
+
+    <div class="workspace">
+      <aside class="controls-panel" aria-label="推理设置">
+        <form id="predict-form">
+          <section class="control-section">
+            <div class="section-title"><span>01</span><h2>输入图像</h2></div>
+            <label class="upload-zone" id="upload-zone" for="image-file">
+              <input id="image-file" type="file" accept="image/jpeg,image/png,image/webp">
+              <span class="upload-symbol" aria-hidden="true">↥</span>
+              <strong>点击上传，或拖入图片</strong>
+              <span>JPG / PNG / WebP · 最大 10 MB</span>
+            </label>
+            <div class="file-summary" id="file-summary" hidden>
+              <span id="file-name"></span>
+              <button type="button" id="clear-image" class="text-button">移除</button>
+            </div>
+            <div class="examples-heading">
+              <span>或使用数据集示例</span>
+              <button type="button" id="refresh-examples" class="text-button">换一组 ↗</button>
+            </div>
+            <div class="example-grid" id="examples" aria-label="示例图片"></div>
+            <p class="muted-text examples-note" id="examples-note">正在读取示例…</p>
+          </section>
+
+          <section class="control-section">
+            <div class="section-title"><span>02</span><h2>搜索任务</h2></div>
+            <label class="field-label" for="task">搜索目标</label>
+            <select id="task" name="task"></select>
+            <span class="field-label model-label" id="model-label">预训练模型</span>
+            <div class="segmented" role="group" aria-labelledby="model-label">
+              <button type="button" class="selected" data-condition="TP" aria-pressed="true">
+                <strong>TP</strong><span>目标存在</span>
+              </button>
+              <button type="button" data-condition="TA" aria-pressed="false">
+                <strong>TA</strong><span>目标缺失</span>
+              </button>
+            </div>
+            <p class="muted-text model-note">选择对应训练条件的模型；不会自动判断上传图像中是否存在目标。</p>
+          </section>
+
+          <section class="control-section decoding-section">
+            <div class="section-title"><span>03</span><h2>解码参数</h2></div>
+            <div class="two-fields">
+              <div>
+                <label class="field-label" for="decoding">解码方式</label>
+                <select id="decoding">
+                  <option value="greedy">贪心 · Greedy</option>
+                  <option value="sample">采样 · Sample</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label" for="max-steps">最大预测步数</label>
+                <input id="max-steps" type="number" min="1" max="6" value="6" required>
+              </div>
+            </div>
+            <details class="advanced-settings">
+              <summary>高级设置<span aria-hidden="true">＋</span></summary>
+              <div class="two-fields advanced-fields">
+                <div>
+                  <label class="field-label" for="stop-threshold">终止阈值</label>
+                  <input id="stop-threshold" type="number" min="0.01" max="0.99" step="0.01" value="0.5" required>
+                </div>
+                <div>
+                  <label class="field-label" for="seed">随机种子</label>
+                  <input id="seed" type="number" min="0" max="2147483647" value="42" required>
+                </div>
+              </div>
+              <p class="muted-text">终止概率超过阈值后停止预测。随机种子用于采样解码。</p>
+            </details>
+          </section>
+
+          <div class="run-area">
+            <button type="submit" id="predict-button" class="primary-button" disabled>
+              <span id="predict-label">开始推理</span><span class="run-arrow" aria-hidden="true">↗</span>
+            </button>
+            <p id="run-hint" class="run-hint">上传图片或选择示例后开始</p>
+          </div>
+        </form>
+      </aside>
+
+      <section class="results-panel" aria-label="推理可视化">
+        <div class="viewer-header">
+          <div><span class="live-dot" aria-hidden="true"></span><h2>搜索轨迹</h2><span class="viewer-tag" id="viewer-tag">等待输入</span></div>
+          <div class="view-toggles" role="group" aria-label="可视化图层">
+            <label><input id="show-path" type="checkbox" checked><span>轨迹</span></label>
+            <label><input id="show-heatmap" type="checkbox" checked><span>热图</span></label>
+          </div>
+        </div>
+
+        <div id="message" class="message" role="alert" hidden></div>
+
+        <div class="image-stage" id="image-stage">
+          <div class="empty-state" id="empty-state">
+            <div class="empty-visual" aria-hidden="true">
+              <span class="orbit orbit-outer"></span><span class="orbit orbit-inner"></span>
+              <span class="orbit-center"></span><span class="orbit-point point-one"></span>
+              <span class="orbit-point point-two"></span><span class="orbit-point point-three"></span>
+            </div>
+            <h3>一次搜索，从一张图片开始</h3>
+            <p>上传图像或选择左侧示例<br>模型将在这里呈现它的注视轨迹</p>
+            <span class="empty-caption">图像 → 任务引导 → 注视序列</span>
+          </div>
+          <canvas id="result-canvas" aria-label="输入图像及预测注视轨迹" hidden></canvas>
+          <div class="stage-caption" id="stage-caption" hidden><span id="image-dimensions"></span><span id="canvas-caption">输入图像</span></div>
+          <div class="busy-overlay" id="busy-overlay" hidden role="status">
+            <span class="spinner" aria-hidden="true"></span>
+            <strong>模型正在搜索</strong><span id="busy-detail">首次推理需要加载权重，请稍候</span>
+          </div>
+        </div>
+
+        <div class="playback" id="playback">
+          <button id="play-button" type="button" class="play-button" disabled aria-label="播放注视轨迹">▶</button>
+          <div class="timeline">
+            <div class="timeline-label"><span id="step-label">轨迹回放</span><span id="step-value">— / —</span></div>
+            <input id="step-slider" type="range" min="1" max="1" value="1" disabled aria-label="显示的注视点数量">
+          </div>
+          <span class="playback-hint" id="playback-hint">推理后逐步查看</span>
+        </div>
+
+        <section class="step-heatmaps" id="step-heatmaps"
+                 aria-labelledby="heatmap-heading" hidden>
+          <div class="heatmap-heading-row">
+            <div class="heatmap-heading-group">
+              <h3 id="heatmap-heading">逐步热图</h3>
+              <span id="heatmap-step-count" class="heatmap-step-count"></span>
+            </div>
+            <div class="heatmap-opacity-control">
+              <label for="heatmap-opacity">热图强度</label>
+              <input id="heatmap-opacity" type="range" min="0" max="100"
+                     value="65" aria-describedby="heatmap-opacity-value">
+              <output id="heatmap-opacity-value" for="heatmap-opacity">65%</output>
+            </div>
+          </div>
+          <p id="heatmap-description" class="heatmap-description">
+            点击任意一步，在主图查看对应热图与注视历史。
+          </p>
+          <div class="heatmap-legend" aria-label="热图图例">
+            <span>低</span><span class="heatmap-colorbar" aria-hidden="true"></span>
+            <span>高</span><span class="heatmap-legend-note">每步分别归一化</span>
+          </div>
+          <div id="heatmap-grid" class="heatmap-grid"
+               aria-label="每一步的预测热图"></div>
+        </section>
+
+        <div class="result-bottom">
+          <div class="metrics" aria-label="推理摘要">
+            <div><span>注视点</span><strong id="metric-fixations">—<small>个</small></strong></div>
+            <div><span>推理耗时</span><strong id="metric-time">—<small>秒</small></strong></div>
+            <div><span>终止原因</span><strong class="metric-text" id="metric-stop">等待推理</strong></div>
+          </div>
+          <div class="result-detail" id="result-detail" hidden>
+            <div class="detail-heading"><h3>注视序列</h3><span>坐标基于 512 × 320 模型输入</span></div>
+            <ol id="fixation-list" class="fixation-list"></ol>
+          </div>
+          <div class="export-bar">
+            <p id="result-note">以图像中心为起点，预测后续注视位置。</p>
+            <div>
+              <button id="export-png" type="button" class="secondary-button" disabled>导出图片 ↓</button>
+              <button id="export-json" type="button" class="secondary-button" disabled>导出 JSON ↓</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <footer class="page-footer"><span>GLDAS-Gaze</span><p>Global–Local Dynamic Adaptive Synergy</p><span>研究演示 · 单图推理</span></footer>
+  </main>
+</body>
+</html>

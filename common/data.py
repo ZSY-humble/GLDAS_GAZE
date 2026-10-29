@@ -12,6 +12,20 @@ import warnings
 import torch.utils.data
 import torch.multiprocessing
 
+
+def _image_dir_for_condition(root_dir, condition):
+    if condition == 'absent':
+        return join(root_dir, 'imagesTA')
+    return join(root_dir, 'images')
+
+
+def _image_path(root_dir, cat_name, img_name, condition):
+    img_dir = _image_dir_for_condition(root_dir, condition)
+    if cat_name == 'none':
+        return join(img_dir, img_name)
+    return join(img_dir, cat_name.replace(' ', '_'), img_name)
+
+
 class FFN_IRL(Dataset):
     """FFN_IRL dataset for visual search."""
 
@@ -34,12 +48,7 @@ class FFN_IRL(Dataset):
         imgId = self.img_info[idx]
         cat_name, img_name, condition = imgId.split('*')
         bbox = self.bboxes.get(imgId, None)
-
-        if cat_name == 'none':
-            im_path = "{}/{}".format(self.img_dir, img_name)
-        else:
-            c = cat_name.replace(' ', '_')
-            im_path = "{}/{}/{}".format(self.img_dir, c, img_name)
+        im_path = _image_path(self.root_dir, cat_name, img_name, condition)
 
         im = Image.open(im_path)
         im_tensor = self.transform(im)
@@ -92,12 +101,7 @@ class GLDAS_Human_Gaze(Dataset):
         img_name, cat_name, condition, fixs, action, is_last, sid, dura = self.fix_labels[idx]
         imgId = cat_name + '_' + img_name
         bbox = self.bboxes.get(imgId, None)
-
-        if cat_name == 'none':
-            im_path = "{}/{}".format(self.img_dir, img_name)
-        else:
-            c = cat_name.replace(' ', '_')
-            im_path = "{}/{}/{}".format(self.img_dir, c, img_name)
+        im_path = _image_path(self.root_dir, cat_name, img_name, condition)
 
         im = Image.open(im_path)
         im_tensor = self.transform(im.copy())

@@ -18,3 +18,8 @@ pretrained_models/
 dataset/
 assets/
 scanpath_step_overlays/
+
+# 网页推理的本地隔离依赖及运行产物
+.web-runtime/
+gldas.pdf
+manal.txt
