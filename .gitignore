@@ -1,0 +1,37 @@
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 大文件（超过 GitHub 100MB 限制，请本地保留或另存网盘/Release）
+pretrained_models/
+dataset/
+assets/
+scanpath_step_overlays/
+
+# 网页推理的本地隔离依赖及运行产物
+.web-runtime/
+gldas.pdf
+manal.txt
+
+# 本机编译产物与打包元数据，避免携带个人路径和平台二进制。
+build/
+dist/
+*.egg-info/
+*.egg
+*.so
+*.o
+
+# 训练和单图推理输出。
+runs/
+outputs/
